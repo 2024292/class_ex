@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-df = pd.read_csv('Ireland_dairy_list.csv')
+#df = pd.read_csv('Ireland_dairy_list.csv')
 
 # Streamlit app
 st.title('Ireland Dairy Exports Visualization')
