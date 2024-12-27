@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
 
 df = pd.read_csv('ireland_dairy_list.csv')
@@ -15,22 +13,9 @@ st.write(df)
 
 # Plot the data
 st.write('## Export Volume and Value Over the Years')
-fig, ax1 = plt.subplots()
-
-color = 'tab:blue'
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Export Volume (tons)', color=color)
-ax1.plot(df['Year'], df['Export Volume (tons)'], color=color)
-ax1.tick_params(axis='y', labelcolor=color)
-
-ax2 = ax1.twinx()
-color = 'tab:red'
-ax2.set_ylabel('Export Value (million €)', color=color)
-ax2.plot(df['Year'], df['Export Value (million €)'], color=color)
-ax2.tick_params(axis='y', labelcolor=color)
-
-fig.tight_layout()
-st.pyplot(fig)
+fig = px.line(df, x='Year', y=['Export Volume (tons)', 'Export Value (million €)'],
+              labels={'value': 'Value', 'variable': 'Metric'}, title='Export Volume and Value Over the Years')
+st.plotly_chart(fig)
 
 # Assuming export_value is another DataFrame you have
 # Sample data for export_value
@@ -38,13 +23,8 @@ export_value = pd.read_csv('exports_value.csv')
 
 # Plot the time series of annual export value
 st.write('## Annual Export Value Time Series')
-plt.figure(figsize=(12, 6))
-sns.lineplot(data=export_value, x='Year', y='Export Value (1000 USD)', marker='o')
-plt.title('Annual Export Value Time Series')
-plt.xlabel('Year')
-plt.ylabel('Export Value (1000 USD)')
-plt.grid(True)
-st.pyplot(plt)
+fig = px.line(export_value, x='Year', y='Export Value (1000 USD)', markers=True, title='Annual Export Value Time Series')
+st.plotly_chart(fig)
 
 # Filter data for the latest year (2022)
 latest_year = 2022
@@ -63,10 +43,8 @@ filtered_items['Others'] = item_percentage[item_percentage < 3].sum()
 
 # Plot a pie chart for the item distribution
 st.write(f"## Export Value Distribution by Item (Year {latest_year})")
-plt.figure(figsize=(8, 8))
-plt.pie(filtered_items, labels=filtered_items.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-plt.title(f"Export Value Distribution by Item (Year {latest_year})", fontsize=14)
-st.pyplot(plt)
+fig = px.pie(filtered_items, values=filtered_items.values, names=filtered_items.index, title=f"Export Value Distribution by Item (Year {latest_year})")
+st.plotly_chart(fig)
 
 # Create an interactive barplot for the export quantity of each Item using Plotly
 st.write('## Export Value (1000 USD) of each Item')
