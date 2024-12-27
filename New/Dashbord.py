@@ -6,9 +6,9 @@ import pandas as pd
 # Streamlit app
 st.title('Ireland Dairy Exports Visualization')
 
-# Display the data
-st.write('## Data')
-st.write(df)
+# # Display the data
+# st.write('## Data')
+# st.write(df)
 
 
 # st.write('## Export Volume and Value Over the Years')
