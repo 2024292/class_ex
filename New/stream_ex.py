@@ -1,84 +1,83 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import plotly.express as px
 
-# 设置页面标题
-st.set_page_config(page_title="Irish Agriculture Dashboard", layout="wide")
+df = pd.read_csv('ireland_dairy_list.csv')
 
-# 页面标题
-st.title("🇮🇪 Irish Agriculture Dashboard for Farmers")
+# Streamlit app
+st.title('Ireland Dairy Exports Visualization')
 
-# --- 数据加载 ---
-@st.cache_data
-def load_data():
-    # 示例数据，可以替换为实际数据文件路径
-    export_data = pd.DataFrame({
-        "Year": [2018, 2019, 2020, 2021, 2022],
-        "Category": ["Beef", "Beef", "Dairy", "Dairy", "Beef"],
-        "Export_Value (€)": [1500, 1600, 2000, 2100, 1800],
-        "Quantity (Tonnes)": [500, 550, 700, 750, 600]
-    })
-    
-    area_yield_data = pd.DataFrame({
-        "Year": [2018, 2019, 2020, 2021, 2022],
-        "Region": ["West", "East", "South", "North", "Midlands"],
-        "Area (Hectares)": [1000, 1200, 1100, 1300, 1250],
-        "Production (Tonnes)": [400, 500, 450, 600, 550]
-    })
-    
-    sentiment_data = pd.DataFrame({
-        "Source": ["Twitter", "News", "Reddit", "Forum", "News"],
-        "Sentiment": ["Positive", "Negative", "Neutral", "Positive", "Negative"],
-        "Count": [120, 80, 50, 150, 90]
-    })
+# Display the data
+st.write('## Data')
+st.write(df)
 
-    return export_data, area_yield_data, sentiment_data
+# Plot the data
+st.write('## Export Volume and Value Over the Years')
+fig, ax1 = plt.subplots()
 
-export_data, area_yield_data, sentiment_data = load_data()
+color = 'tab:blue'
+ax1.set_xlabel('Year')
+ax1.set_ylabel('Export Volume (tons)', color=color)
+ax1.plot(df['Year'], df['Export Volume (tons)'], color=color)
+ax1.tick_params(axis='y', labelcolor=color)
 
-# --- 导航栏 ---
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Export Analysis", "Land & Production", "Sentiment Analysis"])
+ax2 = ax1.twinx()
+color = 'tab:red'
+ax2.set_ylabel('Export Value (million €)', color=color)
+ax2.plot(df['Year'], df['Export Value (million €)'], color=color)
+ax2.tick_params(axis='y', labelcolor=color)
 
-# --- 出口数据可视化 ---
-if page == "Export Analysis":
-    st.header("📊 Agricultural Export Analysis")
-    
-    # 显示数据表格
-    st.dataframe(export_data)
+fig.tight_layout()
+st.pyplot(fig)
 
-    # 按年份和类别筛选
-    year = st.selectbox("Select Year", export_data["Year"].unique())
-    filtered_data = export_data[export_data["Year"] == year]
-    
-    # 柱状图
-    fig = px.bar(filtered_data, x="Category", y="Export_Value (€)", 
-                 title=f"Export Value by Category in {year}", color="Category")
-    st.plotly_chart(fig, use_container_width=True)
+# Assuming export_value is another DataFrame you have
+# Sample data for export_value
+export_value = pd.read_csv('exports_value.csv')
 
-# --- 耕地面积和产量可视化 ---
-elif page == "Land & Production":
-    st.header("🌾 Land Area and Production Trends")
-    
-    # 显示数据表格
-    st.dataframe(area_yield_data)
+# Plot the time series of annual export value
+st.write('## Annual Export Value Time Series')
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=export_value, x='Year', y='Export Value (1000 USD)', marker='o')
+plt.title('Annual Export Value Time Series')
+plt.xlabel('Year')
+plt.ylabel('Export Value (1000 USD)')
+plt.grid(True)
+st.pyplot(plt)
 
-    # 折线图
-    fig = px.line(area_yield_data, x="Year", y=["Area (Hectares)", "Production (Tonnes)"], 
-                  title="Land Area and Production Over the Years", markers=True)
-    st.plotly_chart(fig, use_container_width=True)
+# Filter data for the latest year (2022)
+latest_year = 2022
+data = export_value[export_value['Year'] == latest_year]
 
-# --- 情感分析结果可视化 ---
-elif page == "Sentiment Analysis":
-    st.header("💬 Sentiment Analysis on Livestock Products")
-    
-    # 显示数据表格
-    st.dataframe(sentiment_data)
+# Aggregate export value by item for the year 2022
+item_distribution = data.groupby('Item')['Export Value (1000 USD)'].sum()
 
-    # 饼图
-    fig = px.pie(sentiment_data, names="Sentiment", values="Count", 
-                 title="Sentiment Distribution on Livestock Products")
-    st.plotly_chart(fig, use_container_width=True)
+# Calculate the percentage of each item
+total_value = item_distribution.sum()
+item_percentage = (item_distribution / total_value) * 100
 
-# --- 底部信息 ---
-st.sidebar.info("Developed by [Your Name]. Powered by Streamlit.")
+# Filter out items with less than 3% of the total export value
+filtered_items = item_percentage[item_percentage >= 3]
+filtered_items['Others'] = item_percentage[item_percentage < 3].sum()
+
+# Plot a pie chart for the item distribution
+st.write(f"## Export Value Distribution by Item (Year {latest_year})")
+plt.figure(figsize=(8, 8))
+plt.pie(filtered_items, labels=filtered_items.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
+plt.title(f"Export Value Distribution by Item (Year {latest_year})", fontsize=14)
+st.pyplot(plt)
+
+# Create an interactive barplot for the export quantity of each Item using Plotly
+st.write('## Export Value (1000 USD) of each Item')
+fig = px.bar(export_value, y='Item', x='Export Value (1000 USD)', color='Export Value (1000 USD)', title='Export Value (1000 USD) of each Item',
+             color_continuous_scale=px.colors.sequential.Hot_r, animation_frame='Year', range_x=[0, export_value['Export Value (1000 USD)'].max()])
+fig.update_yaxes(tickangle=0, tickfont_size=10)
+fig.update_layout(width=1000)  
+st.plotly_chart(fig)
+
+# Area plot for export value by category
+st.write('## Export Value by Category')
+fig = px.area(export_value, x='Year', y='Export Value (1000 USD)', color='Item', title='Export Value by Category')
+fig.update_layout(width=1000)  
+st.plotly_chart(fig)
